@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>充电站收益对比计算器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 450px;
+            min-height: 700px;
+            background-color: #ffffff;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            text-align: center;
+        }
+        img.logo {
+            max-width: 80%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input, button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+        input {
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        canvas {
+            width: 100%;
+            height: 300px; /* Set height for the canvas */
+            margin-top: 20px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+                min-height: auto;
+            }
+            img.logo {
+                margin-bottom: 10px;
+            }
+            input, button {
+                padding: 10px;
+                font-size: 16px; /* Larger font for mobile */
+            }
+            table {
+                font-size: 14px; /* Smaller table text on small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="logo.png" alt="公司Logo" class="logo">
+        <h2>充电站收益对比计算器</h2>
+        <form id="revenueForm">
+            <label for="electricity">全年用电量 (千瓦时):</label>
+            <input type="number" id="electricity" placeholder="请输入全年用电量" required>
+            <label for="servicePrice">服务费价格 (元/千瓦时):</label>
+            <input type="number" id="servicePrice" placeholder="请输入服务费价格" step="0.01" required>
+            <label for="electricityPrice">电费价格 (元/千瓦时):</label>
+            <input type="number" id="electricityPrice" placeholder="请输入电费价格" step="0.01" required>
+            <button type="button" onclick="calculateRevenue()">计算收益</button>
+        </form>
+        <table>
+            <tr>
+                <th></th>
+                <th>电费成本</th>
+                <th>服务费收入</th>
+                <th>虚拟电厂收入</th>
+            </tr>
+            <tr>
+                <td>代理前</td>
+                <td id="costBefore"></td>
+                <td id="serviceBefore"></td>
+                <td>0.00元</td>
+            </tr>
+            <tr>
+                <td>代理后</td>
+                <td id="costAfter"></td>
+                <td id="serviceAfter"></td>
+                <td id="virtualAfter"></td>
+            </tr>
+        </table>
+        <canvas id="revenueChart"></canvas>
+    </div>
+    <script>
+        function calculateRevenue() {
+            const electricity = parseFloat(document.getElementById('electricity').value);
+            const servicePrice = parseFloat(document.getElementById('servicePrice').value);
+            const electricityPrice = parseFloat(document.getElementById('electricityPrice').value);
+            const electricityCostBefore = electricity * electricityPrice;
+            const serviceIncomeBefore = electricity * servicePrice;
+            const electricityCostAfter = electricityCostBefore * 0.9;
+            const serviceIncomeAfter = serviceIncomeBefore * 1.08;
+            const virtualPlantIncome = electricity * 0.0088;
+            document.getElementById('costBefore').textContent = `${electricityCostBefore.toFixed(2)}元`;
+            document.getElementById('serviceBefore').textContent = `${serviceIncomeBefore.toFixed(2)}元`;
+            document.getElementById('costAfter').textContent = `${electricityCostAfter.toFixed(2)}元`;
+            document.getElementById('serviceAfter').textContent = `${serviceIncomeAfter.toFixed(2)}元`;
+            document.getElementById('virtualAfter').textContent = `${virtualPlantIncome.toFixed(2)}元`;
+            drawChart([electricityCostBefore, serviceIncomeBefore, 0], [electricityCostAfter, serviceIncomeAfter, virtualPlantIncome]);
+        }
+        function drawChart(beforeData, afterData) {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            if (window.revenueChart) window.revenueChart.destroy(); // Destroy previous chart instance if exists
+            window.revenueChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['电费成本', '服务费收入', '虚拟电厂收入'],
+                    datasets: [{
+                        label: '代理前',
+                        data: beforeData,
+                        backgroundColor: ['rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 'rgba(255, 206, 86, 0.7)'],
+                        borderColor: ['rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 'rgba(255, 206, 86, 1)'],
+                        borderWidth: 1
+                    }, {
+                        label: '代理后',
+                        data: afterData,
+                        backgroundColor: ['rgba(255, 159, 64, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(153, 102, 255, 0.7)'],
+                        borderColor: ['rgba(255, 159, 64, 1)', 'rgba(75, 192, 192, 1)', 'rgba(153, 102, 255, 1)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
